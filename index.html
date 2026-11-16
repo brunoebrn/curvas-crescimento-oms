@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Curvas de crescimento e critérios auxológicos – PCDT de deficiência de GH</title>
+<meta name="description" content="Estatura para idade (OMS), velocidade de crescimento e critérios auxológicos do PCDT de deficiência de GH. Nenhum dado é armazenado ou transmitido.">
+<meta name="referrer" content="no-referrer">
+<link rel="stylesheet" href="vendor/uPlot.min.css">
+<style>
+  :root {
+    color-scheme: light;
+    --fundo: #f4f2ed;
+    --painel: #fbfaf7;
+    --tinta: #1a2a31;
+    --tinta-2: #47575f;
+    --linha: #d3cfc5;
+    --linha-forte: #a9a498;
+    --acento: #0c5f63;
+    --acento-escuro: #084649;
+    --acento-claro: #dcebe9;
+    --aviso: #7d4b00;
+    --aviso-fundo: #f8ecd0;
+    --erro: #9b2218;
+    --erro-fundo: #f8e2de;
+    --raio: 6px;
+    --fonte: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --t-xs: 0.8125rem;
+    --t-s: 0.875rem;
+    --t-m: 1rem;
+    --t-l: 1.25rem;
+    --t-xl: 1.5625rem;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--fundo);
+    color: var(--tinta);
+    font: var(--t-m)/1.5 var(--fonte);
+    accent-color: var(--acento);
+    caret-color: var(--acento);
+  }
+  ::selection { background: var(--acento); color: var(--painel); }
+  :focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; border-radius: 3px; }
+  a { color: var(--acento-escuro); text-underline-offset: 0.18em; text-decoration-thickness: 1px; }
+  a:hover { text-decoration-thickness: 2px; }
+  h1, h2, h3 { margin: 0; line-height: 1.25; text-wrap: balance; }
+  h1 { font-size: var(--t-xl); font-weight: 650; letter-spacing: -0.012em; }
+  h2 { font-size: var(--t-l); font-weight: 650; letter-spacing: -0.008em; }
+  h3 { font-size: var(--t-m); font-weight: 650; }
+  p { margin: 0; }
+  .num, td, th, input, select { font-variant-numeric: tabular-nums; }
+  .oculto-visual {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+  }
+  [hidden] { display: none !important; }
+
+  /* ---------- topo ---------- */
+  .topo {
+    display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 32px;
+    padding: 20px clamp(16px, 3vw, 40px) 16px;
+    border-bottom: 1px solid var(--linha);
+    background: var(--painel);
+  }
+  .topo-texto { max-width: 68ch; }
+  .topo p { margin-top: 6px; color: var(--tinta-2); font-size: var(--t-s); }
+  .acoes { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  /* ---------- controles ---------- */
+  button, input, select { font: inherit; color: inherit; }
+  .botao {
+    min-height: 40px; padding: 8px 14px;
+    border: 1px solid var(--linha-forte); border-radius: var(--raio);
+    background: var(--painel); cursor: pointer;
+    font-size: var(--t-s); font-weight: 600;
+    transition: background-color 160ms ease-out, border-color 160ms ease-out;
+  }
+  .botao:hover { background: var(--acento-claro); border-color: var(--acento); }
+  .botao:active { background: #c9dfdc; }
+  .botao[disabled] { opacity: 0.55; cursor: not-allowed; }
+  .botao-principal { background: var(--acento); border-color: var(--acento); color: var(--painel); }
+  .botao-principal:hover { background: var(--acento-escuro); border-color: var(--acento-escuro); }
+  .botao-principal:active { background: #063638; }
+  .botao-discreto { min-height: 36px; padding: 6px 10px; font-weight: 500; }
+  .botao-icone {
+    display: inline-grid; place-items: center; width: 40px; height: 40px; padding: 0;
+    border: 1px solid transparent; border-radius: var(--raio); background: none; color: var(--tinta-2); cursor: pointer;
+  }
+  .botao-icone:hover { background: var(--erro-fundo); color: var(--erro); border-color: #e3b9b3; }
+  .botao-icone svg { width: 16px; height: 16px; }
+
+  input[type="text"], input[type="date"], input[type="number"], select {
+    width: 100%; min-height: 40px; padding: 7px 10px;
+    border: 1px solid var(--linha-forte); border-radius: var(--raio);
+    background: #fefdfb;
+  }
+  input::placeholder { color: #66747b; opacity: 1; }
+  input:hover, select:hover { border-color: var(--tinta-2); }
+  input[aria-invalid="true"] { border-color: var(--erro); background: #fdf3f1; }
+  input[type="file"] { width: 100%; font-size: var(--t-s); }
+  input[type="file"]::file-selector-button {
+    margin-right: 12px; min-height: 40px; padding: 8px 14px;
+    border: 1px solid var(--linha-forte); border-radius: var(--raio);
+    background: var(--painel); color: var(--tinta); font: inherit; font-weight: 600; cursor: pointer;
+  }
+  input[type="file"]::file-selector-button:hover { background: var(--acento-claro); border-color: var(--acento); }
+  label, .rotulo { display: block; font-size: var(--t-s); font-weight: 600; margin-bottom: 4px; }
+  .dica { margin-top: 4px; color: var(--tinta-2); font-size: var(--t-xs); line-height: 1.45; }
+  fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
+  legend { padding: 0; font-size: var(--t-s); font-weight: 600; margin-bottom: 4px; }
+
+  .segmentado { display: inline-flex; gap: 3px; padding: 3px; border: 1px solid var(--linha-forte); border-radius: 8px; background: #fefdfb; }
+  .segmentado label { margin: 0; font-weight: 500; cursor: pointer; }
+  .segmentado input { position: absolute; opacity: 0; pointer-events: none; }
+  .segmentado span { display: block; min-height: 34px; padding: 6px 14px; border-radius: 5px; font-size: var(--t-s); transition: background-color 160ms ease-out; }
+  .segmentado input:checked + span { background: var(--acento); color: var(--painel); font-weight: 600; }
+  .segmentado input:focus-visible + span { outline: 2px solid var(--acento); outline-offset: 2px; }
+  .segmentado input:disabled + span { color: #7b868c; cursor: not-allowed; }
+  .segmentado label:hover input:not(:checked):not(:disabled) + span { background: var(--acento-claro); }
+
+  /* ---------- estrutura ---------- */
+  .grade {
+    display: grid; grid-template-columns: minmax(360px, 470px) minmax(0, 1fr);
+    align-items: start;
+  }
+  .entrada {
+    padding: 24px 28px 40px 40px;
+    background: var(--painel);
+    border-right: 1px solid var(--linha);
+    min-height: 100%;
+  }
+  .saidas { padding: 24px 40px 40px 36px; min-width: 0; }
+  .bloco + .bloco { margin-top: 36px; }
+  .bloco > h2 { margin-bottom: 14px; }
+  .bloco > h2 + .dica { margin-top: -8px; margin-bottom: 14px; font-size: var(--t-s); max-width: 72ch; }
+  .campos { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 12px; }
+  .campos .inteiro { grid-column: 1 / -1; }
+
+  .alvo { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--linha); font-size: var(--t-s); }
+  .alvo strong { font-weight: 650; }
+
+  /* ---------- medidas (entrada) ---------- */
+  .medidas-lista { list-style: none; margin: 0; padding: 0; container-type: inline-size; }
+  .medida { padding: 10px 0; border-top: 1px solid var(--linha); }
+  .medida:first-child { border-top: 0; padding-top: 0; }
+  .medida-campos { display: grid; grid-template-columns: 88px minmax(0, 1fr) 88px 40px; gap: 8px; align-items: end; }
+  .medida-campos label { font-size: var(--t-xs); font-weight: 500; color: var(--tinta-2); margin-bottom: 2px; }
+  .idade-dupla { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .medida-msgs { margin: 6px 0 0; padding: 0; list-style: none; font-size: var(--t-xs); }
+  .medida-msgs li { padding: 3px 8px; border-radius: 4px; margin-top: 4px; }
+  .msg-erro { background: var(--erro-fundo); color: var(--erro); }
+  .msg-alerta { background: var(--aviso-fundo); color: var(--aviso); }
+  .medidas-rodape { margin-top: 12px; }
+
+  /* ---------- referências ---------- */
+  .refs { list-style: none; margin: 14px 0 0; padding: 0; border-top: 1px solid var(--linha); }
+  .refs li { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--linha); font-size: var(--t-s); }
+  .refs .estado { color: var(--tinta-2); font-size: var(--t-xs); grid-column: 1 / -1; }
+  .refs .ativo { color: var(--acento-escuro); font-weight: 600; }
+  .refs-opcoes { margin-top: 14px; display: grid; gap: 14px; }
+  .msg-arquivo { margin-top: 8px; padding: 6px 10px; border-radius: 4px; font-size: var(--t-xs); }
+
+  /* ---------- critérios ---------- */
+  .aviso-investigacao {
+    padding: 10px 14px; border: 1px solid #e2cf9c; border-radius: var(--raio);
+    background: var(--aviso-fundo); color: #5c3700; font-size: var(--t-s); max-width: 80ch;
+  }
+  .par { display: grid; grid-template-columns: minmax(0, 420px); gap: 4px; margin: 16px 0 6px; }
+  .sugestao { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: var(--t-s); color: var(--tinta-2); margin-top: 6px; }
+  .criterios { list-style: none; margin: 12px 0 0; padding: 0; border-top: 1px solid var(--linha-forte); }
+  .criterio {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(170px, 210px); gap: 6px 24px;
+    padding: 16px 0; border-bottom: 1px solid var(--linha);
+  }
+  .criterio-cab { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+  .criterio h3 { font-size: var(--t-m); }
+  .criterio .definicao { color: var(--tinta-2); font-size: var(--t-s); }
+  .criterio .motivo { margin-top: 6px; max-width: 72ch; }
+  .criterio .meta { margin-top: 4px; color: var(--tinta-2); font-size: var(--t-s); max-width: 72ch; }
+  .criterio .ressalvas { margin: 6px 0 0; padding-left: 18px; color: var(--aviso); font-size: var(--t-s); max-width: 72ch; }
+  .selo {
+    display: inline-block; padding: 2px 10px; border-radius: 999px; border: 1.5px solid transparent;
+    font-size: var(--t-s); font-weight: 650; line-height: 1.5; white-space: nowrap;
+  }
+  .selo-atende { background: var(--acento); color: var(--painel); border-color: var(--acento); }
+  .selo-nao-atende { background: none; color: var(--tinta); border-color: var(--tinta-2); }
+  .selo-nao-avaliavel { background: var(--aviso-fundo); color: #5c3700; border: 1.5px dashed #a87a1f; }
+  .selo-manual { background: none; color: var(--tinta-2); border: 1px solid var(--linha-forte); font-weight: 500; font-size: var(--t-xs); }
+
+  /* ---------- gráficos ---------- */
+  .grafico-cab { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 8px; }
+  .grafico-cab h2 { margin: 0; }
+  .grafico { position: relative; background: #fefdfb; border: 1px solid var(--linha); border-radius: var(--raio); padding: 8px 4px 4px; min-height: 120px; }
+  .grafico-vazio { padding: 40px 20px; text-align: center; color: var(--tinta-2); font-size: var(--t-s); }
+  .leitura { min-height: 1.5em; margin-top: 6px; font-size: var(--t-s); color: var(--tinta-2); }
+  .legenda { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 8px 0 0; padding: 0; list-style: none; font-size: var(--t-xs); color: var(--tinta-2); }
+  .legenda li { display: inline-flex; align-items: center; gap: 6px; }
+  .legenda svg { flex: none; }
+  .u-cursor-pt { display: none; }
+
+  /* ---------- tabelas ---------- */
+  .rolagem { overflow-x: auto; border: 1px solid var(--linha); border-radius: var(--raio); background: #fefdfb; }
+  table { width: 100%; border-collapse: collapse; font-size: var(--t-s); }
+  caption { text-align: left; padding: 0 0 8px; font-size: var(--t-s); color: var(--tinta-2); caption-side: top; }
+  th, td { padding: 8px 12px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--linha); vertical-align: top; }
+  th { font-weight: 600; color: var(--tinta-2); font-size: var(--t-xs); background: #f7f5f0; }
+  th:first-child, td:first-child, th.txt, td.txt { text-align: left; }
+  tr.com-obs td { border-bottom: 0; padding-bottom: 2px; }
+  tr.obs td { white-space: normal; text-align: left; padding-top: 2px; color: var(--tinta-2); font-size: var(--t-xs); }
+  tr.obs ul { margin: 0; padding-left: 16px; max-width: min(80ch, calc(100vw - 84px)); }
+  tbody tr:last-child td { border-bottom: 0; }
+  tr.em-uso td { background: var(--acento-claro); }
+  tr.em-uso.obs td { color: var(--tinta); }
+  .vazio { padding: 16px; color: var(--tinta-2); font-size: var(--t-s); }
+
+  /* ---------- ajuda e fontes ---------- */
+  .prosa { max-width: 72ch; }
+  .prosa p + p, .prosa ul + p, .prosa p + ul { margin-top: 10px; }
+  .prosa ul, .fontes ul { margin: 0; padding-left: 20px; }
+  .prosa li + li, .fontes li + li { margin-top: 6px; }
+  .prosa h3 { margin: 20px 0 6px; }
+  .fontes {
+    padding: 28px clamp(16px, 3vw, 40px) 40px; border-top: 1px solid var(--linha); background: var(--painel);
+    font-size: var(--t-s); color: var(--tinta-2);
+  }
+  .fontes h2 { color: var(--tinta); margin-bottom: 12px; }
+  .fontes ul { max-width: 100ch; }
+  .fontes p { margin-top: 14px; max-width: 100ch; }
+
+  .erro-geral { margin: 16px clamp(16px, 3vw, 40px); padding: 12px 16px; border: 1px solid #e3b9b3; border-radius: var(--raio); background: var(--erro-fundo); color: var(--erro); }
+
+  @media (max-width: 900px) {
+    .grade { grid-template-columns: minmax(0, 1fr); }
+    .entrada { border-right: 0; border-bottom: 1px solid var(--linha); padding: 20px 16px 28px; }
+    .saidas { padding: 24px 16px 32px; }
+    .criterio { grid-template-columns: minmax(0, 1fr); }
+  }
+  @container (max-width: 400px) {
+    .medida-campos { grid-template-columns: 96px minmax(0, 1fr) 40px; }
+    .medida-campos .c-quando { grid-column: 2; grid-row: 1; }
+    .medida-campos .c-cm { grid-column: 2; grid-row: 2; }
+    .medida-campos .c-rem { grid-column: 3; grid-row: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  @media print {
+    .acoes, .medidas-rodape, .botao-icone, input[type="file"] { display: none; }
+    .grade { grid-template-columns: 1fr; }
+    body, .entrada, .topo, .fontes { background: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <div class="topo-texto">
+    <h1>Curvas de crescimento e critérios auxológicos do PCDT de deficiência de GH</h1>
+    <p>Nada é salvo nem enviado: os dados ficam só nesta aba e somem ao fechar ou recarregar a página.</p>
+  </div>
+  <div class="acoes">
+    <button type="button" class="botao" id="btnExemplo">Carregar exemplo fictício</button>
+    <button type="button" class="botao" id="btnLimpar">Novo paciente</button>
+  </div>
+</header>
+
+<div class="erro-geral" id="erroGeral" role="alert" hidden></div>
+
+<main class="grade">
+  <div class="entrada">
+    <section class="bloco" aria-labelledby="hPaciente">
+      <h2 id="hPaciente">Paciente</h2>
+      <div class="campos">
+        <fieldset class="inteiro">
+          <legend>Sexo</legend>
+          <div class="segmentado">
+            <label><input type="radio" name="sexo" value="M"><span>Masculino</span></label>
+            <label><input type="radio" name="sexo" value="F"><span>Feminino</span></label>
+          </div>
+        </fieldset>
+        <div class="inteiro">
+          <label for="nascimento">Data de nascimento</label>
+          <input type="date" id="nascimento" autocomplete="off">
+          <p class="dica">Necessária para medidas informadas por data. Com medidas por idade, pode ficar em branco.</p>
+        </div>
+        <div>
+          <label for="pai">Estatura do pai (cm)</label>
+          <input type="text" inputmode="decimal" id="pai" autocomplete="off" placeholder="opcional">
+        </div>
+        <div>
+          <label for="mae">Estatura da mãe (cm)</label>
+          <input type="text" inputmode="decimal" id="mae" autocomplete="off" placeholder="opcional">
+        </div>
+      </div>
+      <p class="alvo" id="alvo" aria-live="polite"></p>
+    </section>
+
+    <section class="bloco" aria-labelledby="hMedidas">
+      <h2 id="hMedidas">Medidas de estatura</h2>
+      <p class="dica">Uma linha por medida, por data ou por idade. Comprimento deitado antes dos 2 anos e estatura em pé depois, sem ajuste. A ordem não importa.</p>
+      <ol class="medidas-lista" id="medidas"></ol>
+      <div class="medidas-rodape">
+        <button type="button" class="botao" id="btnAdicionar">Adicionar medida</button>
+      </div>
+    </section>
+
+    <section class="bloco" aria-labelledby="hRefs">
+      <h2 id="hRefs">Referências de velocidade</h2>
+      <p class="dica">Antes dos 2 anos a ferramenta usa a OMS 2009, já incluída. Acima disso, carregue os arquivos JSON de Kelly 2014 e de Tanner &amp; Davies 1985 guardados na pasta do CEAF. Eles são lidos só neste navegador.</p>
+      <label for="arquivos">Carregar arquivos de referência</label>
+      <input type="file" id="arquivos" accept=".json,application/json" multiple>
+      <div id="msgArquivo" role="status"></div>
+      <ul class="refs" id="refs"></ul>
+      <div class="refs-opcoes">
+        <fieldset>
+          <legend>Referência a partir de 5,5 anos</legend>
+          <div class="segmentado" id="segPreferencia">
+            <label><input type="radio" name="preferencia" value="kelly" checked><span>Kelly 2014</span></label>
+            <label><input type="radio" name="preferencia" value="tanner"><span>Tanner &amp; Davies</span></label>
+          </div>
+          <p class="dica">Vale quando as duas estão carregadas. Entre 2 e 5,5 anos só Tanner cobre a idade.</p>
+        </fieldset>
+        <div>
+          <label for="kellyTabela">Tabela de Kelly</label>
+          <select id="kellyTabela">
+            <option value="2a">S2a – todos (padrão)</option>
+            <option value="precoce">S2b – maturação precoce</option>
+            <option value="media">S2b – maturação média</option>
+            <option value="tardia">S2b – maturação tardia</option>
+          </select>
+          <p class="dica">Use a S2b só se o tempo de início da puberdade for conhecido.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="saidas">
+    <section class="bloco" aria-labelledby="hCriterios">
+      <h2 id="hCriterios">Critérios auxológicos de investigação (PCDT, item 3.1)</h2>
+      <p class="aviso-investigacao">Atender a um critério indica investigação de deficiência de GH. Não basta para inclusão: o item 4 do PCDT exige a deficiência comprovada por teste de estímulo.</p>
+      <div class="par">
+        <label for="par">Intervalo de VC usado no checklist</label>
+        <select id="par"></select>
+        <p class="dica">A estatura é sempre a da medida mais recente. Para o C3, escolha um par com cerca de 12 meses.</p>
+      </div>
+      <div class="sugestao" id="sugestao" hidden></div>
+      <ul class="criterios" id="criterios" aria-live="polite"></ul>
+    </section>
+
+    <section class="bloco" aria-labelledby="hEstatura">
+      <div class="grafico-cab">
+        <h2 id="hEstatura">Estatura para idade (OMS)</h2>
+        <div class="segmentado" role="group" aria-label="Enquadramento do gráfico de estatura">
+          <label><input type="radio" name="vistaEstatura" value="medidas" checked><span>Medidas</span></label>
+          <label><input type="radio" name="vistaEstatura" value="tudo"><span>0 a 19 anos</span></label>
+        </div>
+      </div>
+      <div class="grafico" id="grafEstatura"></div>
+      <p class="leitura" id="leituraEstatura" aria-hidden="true"></p>
+      <ul class="legenda" id="legEstatura"></ul>
+    </section>
+
+    <section class="bloco" aria-labelledby="hVc">
+      <div class="grafico-cab">
+        <h2 id="hVc">Velocidade de crescimento</h2>
+        <div class="segmentado" role="group" aria-label="Enquadramento do gráfico de velocidade">
+          <label><input type="radio" name="vistaVc" value="medidas" checked><span>Medidas</span></label>
+          <label><input type="radio" name="vistaVc" value="tudo"><span>0 a 19 anos</span></label>
+        </div>
+      </div>
+      <div class="grafico" id="grafVc"></div>
+      <p class="leitura" id="leituraVc" aria-hidden="true"></p>
+      <ul class="legenda" id="legVc"></ul>
+    </section>
+
+    <section class="bloco" aria-labelledby="hTabMedidas">
+      <h2 id="hTabMedidas">Resultados por medida</h2>
+      <div id="tabMedidas"></div>
+    </section>
+
+    <section class="bloco" aria-labelledby="hTabIntervalos">
+      <h2 id="hTabIntervalos">Resultados por intervalo</h2>
+      <div id="tabIntervalos"></div>
+    </section>
+
+    <section class="bloco prosa" aria-labelledby="hAjuda">
+      <h2 id="hAjuda">Como interpretar</h2>
+      <h3>Os três critérios</h3>
+      <ul>
+        <li><strong>C1</strong>: estatura abaixo de −3 DP.</li>
+        <li><strong>C2</strong>: estatura entre −3 e −2 DP e velocidade de crescimento abaixo do percentil 25.</li>
+        <li><strong>C3</strong>: estatura igual ou acima de −2 DP e velocidade de crescimento abaixo de −1 DP em 12 meses.</li>
+      </ul>
+      <p>Cada critério aparece como <em>atende</em>, <em>não atende</em> ou <em>não avaliável</em>, com o motivo e a referência usada. A classificação manual prevalece sobre a automática e fica identificada como manual.</p>
+      <h3>Estatura</h3>
+      <p>O z é calculado pela OMS 2006 até 1826 dias (60 meses) e pela OMS 2007 daí até 19 anos. Na troca de tabela e aos 2 anos (passagem de deitado para em pé) as curvas têm um pequeno degrau, que vem das próprias tabelas.</p>
+      <p>A estatura-alvo segue a SBP (2023): média das estaturas dos pais, somando 13 cm para meninos ou subtraindo 13 cm para meninas, com faixa de ±5 cm. Ela aparece aos 19 anos no gráfico de 0 a 19 anos.</p>
+      <h3>Velocidade de crescimento</h3>
+      <p>A VC é calculada entre duas medidas, em cm/ano, e desenhada no ponto médio do intervalo. Intervalos menores que 6 meses são pouco confiáveis.</p>
+      <ul>
+        <li><strong>Antes dos 2 anos</strong>: OMS 2009, que só tem incrementos de 2, 3, 4 e 6 meses. Quando o intervalo observado foge da tolerância da OMS, o incremento é rateado para o intervalo nominal mais próximo (até 1 mês de diferença).</li>
+        <li><strong>De 2 a 5,5 anos</strong>: Tanner &amp; Davies 1985, com percentil aproximado. Sem o arquivo, use a variação do z de estatura e as faixas da SBP (cerca de 7 cm/ano dos 2 aos 4 anos e 6 cm/ano dos 4 aos 6 anos) como guia e classifique manualmente.</li>
+        <li><strong>A partir de 5,5 anos</strong>: Kelly 2014, que vale para intervalos de 11 a 13 meses, ou Tanner &amp; Davies, que vale para 0,85 a 1,15 ano.</li>
+      </ul>
+      <h3>O que a ferramenta não avalia</h3>
+      <p>Testes de estímulo, IGF-1, idade óssea e critérios de exclusão ficam fora. O guia do CEAF/AL (2023) pede 1 teste de estímulo; o PCDT exige 2 na deficiência isolada.</p>
+    </section>
+  </div>
+</main>
+
+<footer class="fontes">
+  <h2>Fontes</h2>
+  <ul>
+    <li>PCDT de deficiência do hormônio de crescimento – hipopituitarismo: Portaria Conjunta SAS/SCTIE nº 28, de 30/11/2018 (CID E23.0). Critérios auxológicos no item 3.1.</li>
+    <li>Estatura para idade: WHO Child Growth Standards (2006) e WHO Growth Reference 5–19 years (2007), tabelas dos pacotes <a href="https://github.com/WorldHealthOrganization/anthro" rel="noopener">anthro</a> e <a href="https://github.com/WorldHealthOrganization/anthroplus" rel="noopener">anthroplus</a> da OMS (GPL-3).</li>
+    <li>Velocidade antes dos 2 anos: <a href="https://www.who.int/tools/child-growth-standards/standards/length-velocity" rel="noopener">WHO Child Growth Standards: growth velocity (2009)</a>, incrementos de comprimento. © World Health Organization; reproduzido com atribuição para uso educacional não comercial. A OMS não endossa esta ferramenta.</li>
+    <li>Estatura-alvo e faixas aproximadas de VC: Sociedade Brasileira de Pediatria, Manual de Orientação nº 64 (2023).</li>
+    <li>Kelly A, et al. Age-based reference ranges for annual height velocity in US children. J Clin Endocrinol Metab. 2014 (doi 10.1210/jc.2013-4455). Arquivo carregado pelo usuário; não distribuído aqui.</li>
+    <li>Tanner JM, Davies PSW. Clinical longitudinal standards for height and height velocity for North American children. J Pediatr. 1985 (doi 10.1016/s0022-3476(85)80501-1). Curvas digitalizadas, carregadas pelo usuário; não distribuídas aqui.</li>
+  </ul>
+  <p>Ferramenta de apoio à avaliação no CEAF (SESAU/AL). Não substitui o julgamento clínico nem a leitura do PCDT. Gráficos com <a href="https://github.com/leeoniya/uPlot" rel="noopener">uPlot</a> (MIT).</p>
+</footer>
+
+<script src="vendor/uPlot.iife.min.js"></script>
+<script type="module" src="js/ui.js"></script>
+</body>
+</html>

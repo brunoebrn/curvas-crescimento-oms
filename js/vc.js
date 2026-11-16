@@ -294,6 +294,7 @@ export function avaliarVc(intervalo, ctx) {
     return {
       chave: 'oms2009',
       referencia: `OMS 2009 (incremento de ${r.nominalMeses} meses, ${r.intervaloTabela})`,
+      nominalMeses: r.nominalMeses,
       z: r.z,
       percentil: r.percentil,
       naoAvaliavel: false,
