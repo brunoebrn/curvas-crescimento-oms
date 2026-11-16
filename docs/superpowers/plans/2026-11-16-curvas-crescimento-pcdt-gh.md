@@ -60,7 +60,7 @@ package.json                  só "type": "module" e script de teste
 .nojekyll
 ```
 
-Comando único de teste: `npm test` (= `node --test tests/`). Saída esperada: todos os testes passam, 0 falhas.
+Comando único de teste: `npm test` (= `node --test "tests/*.test.js"`). Saída esperada: todos os testes passam, 0 falhas.
 
 ---
 
