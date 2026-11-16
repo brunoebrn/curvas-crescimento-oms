@@ -83,6 +83,10 @@ test('Kelly: z pelo LMS com interpolação linear de L, M e S', () => {
   assert.equal(zKelly(kellySint, 8.1, 5), null);
 });
 
+test('Kelly: mediana zero (fim de tabela) não tem z', () => {
+  assert.equal(zKelly({ idade: [16, 17], L: [0.5, 0.5], S: [0.9, 0.9], M: [0, 0] }, 16.5, 1), null);
+});
+
 test('valorNoZ inverte o LMS', () => {
   perto(valorNoZ({ L: 0.5, M: 6, S: 0.3 }, (Math.sqrt(4 / 6) - 1) / 0.15), 4, 1e-12);
   perto(valorNoZ({ L: 1, M: 5, S: 0.2 }, -1), 4, 1e-12);

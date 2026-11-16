@@ -166,7 +166,7 @@ export function lmsKelly(tabela, idadeAnos) {
 /** z da VC por Kelly et al. 2014: ((VC/M)^L − 1)/(L·S). `null` fora da faixa etária. */
 export function zKelly(tabela, idadeAnos, vc) {
   const p = lmsKelly(tabela, idadeAnos);
-  if (!p) return null;
+  if (!p || !(p.M > 0)) return null; // M = 0 no fim de algumas tabelas: sem z definido
   let z;
   let limitado = false;
   if (vc > 0) {

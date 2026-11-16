@@ -38,6 +38,12 @@ test('Kelly: exige a tabela 2a dos dois sexos e vetores coerentes', () => {
   sNeg.tabelas['2b'].F.tardia.S[0] = -0.1;
   assert.match(validarReferencia(sNeg).erros.join(' '), /S/);
 
+  const mZero = kellySintetico();
+  mZero.tabelas['2a'].M.M[48] = 0;
+  assert.equal(validarReferencia(mZero).ok, true);
+  mZero.tabelas['2a'].M.M[48] = -1;
+  assert.equal(validarReferencia(mZero).ok, false);
+
   const naoNum = kellySintetico();
   naoNum.tabelas['2a'].F.M[2] = 'x';
   assert.equal(validarReferencia(naoNum).ok, false);
@@ -49,6 +55,14 @@ test('Kelly: a tabela 2b é opcional e pode faltar algum grupo', () => {
   assert.equal(validarReferencia(k).ok, true);
   delete k.tabelas['2b'];
   assert.equal(validarReferencia(k).ok, true);
+});
+
+test('Kelly: percentil impresso em branco (null) é aceito; fora de ordem não', () => {
+  const k = kellySintetico();
+  k.tabelas['2a'].F.p3[5] = null;
+  assert.equal(validarReferencia(k).ok, true);
+  k.tabelas['2a'].F.p10[6] = 99;
+  assert.match(validarReferencia(k).erros.join(' '), /ordem/);
 });
 
 test('Tanner: exige as 7 curvas em ordem e o bloco de validação', () => {

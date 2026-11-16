@@ -42,7 +42,8 @@ function conferirVetores(obj, campos, onde, erros) {
 function conferirOrdem(obj, percentis, onde, erros) {
   for (let i = 0; i < obj.idade.length; i += 1) {
     for (let k = 1; k < percentis.length; k += 1) {
-      if (obj[percentis[k]][i] < obj[percentis[k - 1]][i]) {
+      const [menor, maior] = [obj[percentis[k - 1]][i], obj[percentis[k]][i]];
+      if (menor !== null && maior !== null && maior < menor) {
         erros.push(`${onde}: percentis fora de ordem na idade ${obj.idade[i]} (${percentis[k - 1]} > ${percentis[k]}).`);
         return;
       }
@@ -54,10 +55,16 @@ function conferirTabelaKelly(t, onde, erros) {
   const campos = ['idade', 'L', 'S', 'M'];
   if (!conferirVetores(t, campos, onde, erros)) return;
   if (t.S.some((s) => s <= 0)) erros.push(`${onde}: S deve ser positivo.`);
-  if (t.M.some((m) => m <= 0)) erros.push(`${onde}: M deve ser positivo.`);
+  // M = 0,0 aparece impresso no fim de algumas tabelas (crescimento encerrado); nessas idades não há z
+  if (t.M.some((m) => m < 0)) erros.push(`${onde}: M não pode ser negativo.`);
   // os percentis impressos são opcionais (servem de conferência), mas se vierem precisam ser coerentes
+  // (o PDF deixa em branco, aqui null, os percentis que o LMS não define)
   if (PERCENTIS_KELLY.every((p) => p in t)) {
-    if (conferirVetores(t, ['idade', ...PERCENTIS_KELLY], onde, erros)) conferirOrdem(t, PERCENTIS_KELLY, onde, erros);
+    const n = t.idade.length;
+    const ok = PERCENTIS_KELLY.every((p) => Array.isArray(t[p]) && t[p].length === n
+      && t[p].every((x) => x === null || (typeof x === 'number' && Number.isFinite(x))));
+    if (!ok) erros.push(`${onde}: percentis impressos com tamanho ou valor inválido.`);
+    else conferirOrdem(t, PERCENTIS_KELLY, onde, erros);
   }
 }
 
