@@ -10,8 +10,11 @@ Nenhum dado de paciente é armazenado ou transmitido. Tudo roda no navegador, o 
 
 ## Referências de velocidade
 
-- Antes dos 2 anos: OMS 2009, incluída em `data/`.
-- Acima de 2 anos: Kelly et al. 2014 e Tanner & Davies 1985 são protegidos por direito autoral e não estão neste repositório. O usuário carrega no navegador os arquivos JSON gerados pelos scripts de `scripts/` a partir dos PDF originais.
+Todas vêm embutidas e carregam sozinhas; o usuário não anexa nada.
+
+- Antes dos 2 anos: OMS 2009.
+- A partir de 5,5 anos: Kelly et al. 2014 (Tabelas Suplementares S2a e S2b), incluído com autorização declarada pelo mantenedor.
+- De 2 a 5,5 anos: Tanner & Davies 1985, ainda não incluído (falta digitalizar as curvas). Nessa faixa o critério de VC fica "não avaliável" no automático e pode ser classificado manualmente.
 
 ## Rodar e testar localmente
 
@@ -37,7 +40,7 @@ O primeiro comando testa os módulos de cálculo (Node 20 ou mais recente, sem d
 
 ## Licenças dos dados
 
-Ver `data/README.md`. As tabelas de estatura vêm dos pacotes `anthro` e `anthroplus` da OMS (GPL-3). As tabelas de velocidade de 2009 são © World Health Organization, reproduzidas com atribuição para uso educacional não comercial. A OMS não endossa esta ferramenta. uPlot (em `vendor/`) é MIT.
+Ver `data/README.md`. As tabelas de estatura vêm dos pacotes `anthro` e `anthroplus` da OMS (GPL-3). As tabelas de velocidade de 2009 são © World Health Organization, reproduzidas com atribuição para uso educacional não comercial. As tabelas de Kelly 2014 são copyright da Endocrine Society. A OMS não endossa esta ferramenta. uPlot (em `vendor/`) é MIT.
 
 ## Aviso
 

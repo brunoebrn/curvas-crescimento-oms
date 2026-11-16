@@ -6,7 +6,8 @@ Ferramenta web estática (GitHub Pages) para plotar estatura e velocidade de cre
 
 - Idioma: português do Brasil em interface, código comentado, docs e commits. Usar en dash (–), nunca em dash.
 - Não afirmar nada sem fonte verificável; não inventar referências. Na dúvida, perguntar ao Bruno em múltipla escolha.
-- Repositório público: NUNCA versionar dados restritos (Kelly 2014, Tanner & Davies 1985, nem JSON derivados deles, nem os PDFs, nem imagens ou CSV de pontos). Eles ficam no Drive e são carregados pelo usuário no navegador. `.gitignore` bloqueia `referencias-restritas/`. Testes usam só dados sintéticos (`tests/_sinteticos.js`).
+- Referências de VC vêm embutidas (decisão do Bruno em 16/11/2026, que declarou ter autorização para versionar tudo): `data/kelly-2014.json` já está no repositório e `data/tanner-1985.json` entra quando for digitalizado; `data/referencias.json` diz à página quais existem. Os PDFs originais, imagens renderizadas e CSV de pontos continuam fora do git (`referencias-restritas/`). Testes unitários usam só dados sintéticos (`tests/_sinteticos.js`).
+- Tela simples: o usuário preenche só sexo, nascimento (ou idades), estaturas e, se quiser, estatura dos pais. Nada de exigir upload ou escolha de referência no fluxo normal; ajustes raros ficam recolhidos.
 - Sem etapa de build: `index.html` (CSS embutido) + ES modules em `js/` + dados em `data/` + uPlot em `vendor/`. Módulos de cálculo puros, testados com Node.
 - Nada de `localStorage`, cookies ou rede além dos arquivos do próprio site.
 
@@ -26,4 +27,4 @@ Ferramenta web estática (GitHub Pages) para plotar estatura e velocidade de cre
 
 ## Próximo passo
 
-Digitalizar Tanner & Davies 1985 (ver `docs/HANDOFF.md`, pendência 1).
+Digitalizar Tanner & Davies 1985 e incluí-lo em `data/` (ver `docs/HANDOFF.md`, pendência 1).
