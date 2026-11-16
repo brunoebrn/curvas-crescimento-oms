@@ -13,7 +13,7 @@ const MENOS = '−';
 
 let proximoId = 1;
 const novaMedida = (dados = {}) => ({
-  id: `m${proximoId++}`, modo: 'data', data: '', anos: '', meses: '', cm: '', ...dados,
+  id: `m${proximoId++}`, data: '', anos: '', meses: '', cm: '', ...dados,
 });
 
 const estado = {
@@ -21,6 +21,7 @@ const estado = {
   nascimento: '',
   pai: '',
   mae: '',
+  modo: 'data', // as medidas são informadas todas por data ou todas por idade
   medidas: [novaMedida(), novaMedida()],
   kelly: null,
   tanner: null,
@@ -89,23 +90,16 @@ function linhaMedida(m, indice) {
     return el;
   };
 
-  const modo = criar('select', {},
-    criar('option', { value: 'data', text: 'Data' }),
-    criar('option', { value: 'idade', text: 'Idade' }));
-  modo.dataset.campo = 'modo';
-  modo.value = m.modo;
-  modo.addEventListener('change', () => { m.modo = modo.value; renderMedidas(); atualizar(); });
-
   let quando;
-  if (m.modo === 'idade') {
+  if (estado.modo === 'idade') {
     const anos = entrada('anos', { type: 'text', inputmode: 'numeric', placeholder: 'anos', 'aria-label': `Medida ${n}: idade, anos` });
     const meses = entrada('meses', { type: 'text', inputmode: 'decimal', placeholder: 'meses', 'aria-label': `Medida ${n}: idade, meses` });
     anos.id = `${m.id}-anos`;
     quando = criar('div', { class: 'c-quando' },
-      criar('label', { for: anos.id, text: 'Idade (anos, meses)' }),
+      criar('label', { for: anos.id, text: `Medida ${n}: idade` }),
       criar('div', { class: 'idade-dupla' }, anos, meses));
   } else {
-    quando = campo('Data da medida', entrada('data', { type: 'date' }), 'c-quando');
+    quando = campo(`Medida ${n}: data`, entrada('data', { type: 'date', max: hojeIso() }), 'c-quando');
   }
 
   const remover = criar('button', {
@@ -121,7 +115,6 @@ function linhaMedida(m, indice) {
 
   li.append(
     criar('div', { class: 'medida-campos' },
-      campo(`Medida ${n}`, modo, 'c-modo'),
       quando,
       campo('Estatura (cm)', entrada('cm', { type: 'text', inputmode: 'decimal' }), 'c-cm'),
       criar('div', { class: 'c-rem' }, remover)),
@@ -153,14 +146,10 @@ function renderRefs() {
   const item = (chave, nome, dados) => {
     const li = criar('li', {}, criar('span', { text: nome }));
     if (!dados) {
-      li.append(criar('span', { class: 'estado', text: 'Não carregado.' }));
+      li.append(criar('span', { class: 'estado', text: 'Ainda não incluída: nessa faixa o critério de VC fica não avaliável no automático.' }));
       return li;
     }
-    li.append(criar('button', {
-      type: 'button', class: 'botao botao-discreto', text: 'Remover',
-      onclick: () => { estado[chave] = null; estado.arquivos[chave] = ''; renderRefs(); atualizar(); },
-    }));
-    const partes = [`Ativo: ${estado.arquivos[chave]}`, `gerado em ${fmtData(dados.geradoEm)}`];
+    const partes = [estado.arquivos[chave]];
     if (chave === 'tanner') {
       partes.push(`erro máximo do P50: ${String(dados.validacao.erroMaximo).replace('.', ',')} cm/ano`
         + (dados.validacao.baixaConfianca ? ' (BAIXA CONFIANÇA)' : ''));
@@ -172,8 +161,7 @@ function renderRefs() {
     item('kelly', 'Kelly 2014 (a partir de 5,5 anos)', estado.kelly),
     item('tanner', 'Tanner & Davies 1985 (2 a 19 anos)', estado.tanner),
   );
-  const ambas = Boolean(estado.kelly && estado.tanner);
-  document.querySelectorAll('input[name="preferencia"]').forEach((r) => { r.disabled = !ambas; });
+  $('campoPreferencia').hidden = !(estado.kelly && estado.tanner);
   $('kellyTabela').disabled = !estado.kelly;
 }
 
@@ -194,7 +182,7 @@ async function carregarArquivos(arquivos) {
     }
     const chave = v.tipo === 'kelly2014' ? 'kelly' : 'tanner';
     estado[chave] = v.dados;
-    estado.arquivos[chave] = arq.name;
+    estado.arquivos[chave] = `Arquivo carregado: ${arq.name}`;
     msgs.push({ erro: false, texto: `${arq.name}: carregado (${chave === 'kelly' ? 'Kelly 2014' : 'Tanner & Davies 1985'}).` });
     v.avisos.forEach((t) => msgs.push({ erro: false, alerta: true, texto: `${arq.name}: ${t}` }));
   }
@@ -228,7 +216,8 @@ const rotuloMedida = (m) => formatarIdade(m.dias);
 function renderPar() {
   const sel = $('par');
   const ms = resultado.medidas;
-  const opcoes = [criar('option', { value: '', text: 'Intervalo mais recente (automático)' })];
+  const porId = new Map(ms.map((m) => [m.id, m]));
+  const opcoes = [criar('option', { value: '', text: 'Automático (par mais próximo de 12 meses)' })];
   for (let j = ms.length - 1; j >= 1; j -= 1) {
     for (let i = j - 1; i >= 0; i -= 1) {
       const meses = (ms[j].dias - ms[i].dias) / 30.4375;
@@ -244,21 +233,12 @@ function renderPar() {
   if (!pu || pu.origem !== 'escolhido') estado.par = null;
   sel.disabled = ms.length < 2;
 
-  const sug = $('sugestao');
-  const s = resultado.sugestaoPar;
-  if (!s) {
-    sug.hidden = true;
-    sug.replaceChildren();
-    return;
-  }
-  sug.hidden = false;
-  sug.replaceChildren(
-    criar('span', { text: `O intervalo em uso tem ${num(pu.intervalo.meses)} meses. Há um par de ${num(s.anos * 12)} meses terminando na última medida.` }),
-    criar('button', {
-      type: 'button', class: 'botao botao-discreto', text: 'Usar par de cerca de 12 meses',
-      onclick: () => { estado.par = { a: s.a, b: s.b }; atualizar(); },
-    }),
-  );
+  $('parResumo').textContent = pu
+    ? `VC usada no checklist: ${num(pu.intervalo.vc)} cm/ano, de ${rotuloMedida(porId.get(pu.a))} a ${rotuloMedida(porId.get(pu.b))} `
+      + `(${num(pu.intervalo.meses)} meses${pu.origem === 'escolhido' ? ', intervalo escolhido pelo avaliador' : ''}). `
+      + 'A estatura é a da medida mais recente.'
+    : '';
+  for (const chave of ['C1', 'C2', 'C3']) $(`manual-${chave}`).value = estado.manual[chave] ?? '';
 }
 
 const DEFINICOES = {
@@ -282,20 +262,7 @@ function renderCriterios() {
       if (c.referencia) corpo.append(criar('p', { class: 'meta', text: `Referência: ${c.referencia}.` }));
       if (c.ressalvas.length) corpo.append(criar('ul', { class: 'ressalvas' }, ...c.ressalvas.map((t) => criar('li', { text: t }))));
     }
-    const idSel = `manual-${chave}`;
-    const sel = criar('select', { id: idSel },
-      criar('option', { value: '', text: 'Automática' }),
-      criar('option', { value: 'atende', text: 'Manual: atende' }),
-      criar('option', { value: 'nao-atende', text: 'Manual: não atende' }));
-    sel.value = estado.manual[chave] ?? '';
-    sel.addEventListener('change', () => {
-      estado.manual[chave] = sel.value;
-      atualizar();
-      $(idSel)?.focus();
-    });
-    return criar('li', { class: 'criterio', 'data-criterio': chave, 'data-status': c.status, 'data-origem': c.origem },
-      corpo,
-      criar('div', {}, criar('label', { for: idSel, text: `Classificação de ${chave}` }), sel));
+    return criar('li', { class: 'criterio', 'data-criterio': chave, 'data-status': c.status, 'data-origem': c.origem }, corpo);
   });
   $('criterios').replaceChildren(...itens);
 }
@@ -317,7 +284,7 @@ function tabela(colunas, linhas, legenda) {
 
 function renderTabelas() {
   const ms = resultado.medidas;
-  const datas = new Map(estado.medidas.map((m) => [m.id, m.modo === 'data' ? m.data : '']));
+  const datas = new Map(estado.medidas.map((m) => [m.id, estado.modo === 'data' ? m.data : '']));
   if (!ms.length) {
     $('tabMedidas').replaceChildren(criar('p', { class: 'vazio', text: 'Sem medidas válidas. Preencha sexo e ao menos uma medida para ver z e percentil.' }));
   } else {
@@ -379,7 +346,9 @@ function renderGraficos() {
 
 function atualizar() {
   if (!tabelas) return;
-  resultado = calcular({ ...estado, hoje: hojeIso() }, tabelas);
+  resultado = calcular({
+    ...estado, hoje: hojeIso(), medidas: estado.medidas.map((m) => ({ ...m, modo: estado.modo })),
+  }, tabelas);
   renderMensagensMedidas();
   renderAlvo();
   renderPar();
@@ -396,6 +365,8 @@ function agendar() {
 
 function sincronizarCampos() {
   document.querySelectorAll('input[name="sexo"]').forEach((r) => { r.checked = r.value === estado.sexo; });
+  document.querySelectorAll('input[name="modo"]').forEach((r) => { r.checked = r.value === estado.modo; });
+  $('campoNascimento').hidden = estado.modo === 'idade';
   $('nascimento').value = estado.nascimento;
   $('pai').value = estado.pai;
   $('mae').value = estado.mae;
@@ -407,6 +378,7 @@ function novoPaciente(dados = null) {
   estado.nascimento = dados?.nascimento ?? '';
   estado.pai = dados?.pai ?? '';
   estado.mae = dados?.mae ?? '';
+  estado.modo = 'data';
   estado.medidas = dados ? dados.medidas.map((m) => novaMedida(m)) : [novaMedida(), novaMedida()];
   estado.par = null;
   estado.manual = {};
@@ -421,13 +393,20 @@ function ligarEventos() {
     $(campo).addEventListener('input', () => { estado[campo] = $(campo).value; agendar(); });
   }
   $('btnAdicionar').addEventListener('click', () => {
-    const ultima = estado.medidas.at(-1);
-    const nova = novaMedida({ modo: ultima?.modo ?? 'data' });
+    const nova = novaMedida();
     estado.medidas.push(nova);
     renderMedidas();
     atualizar();
     $('medidas').querySelector(`[data-id="${nova.id}"] input`)?.focus();
   });
+  document.querySelectorAll('input[name="modo"]').forEach((r) => r.addEventListener('change', () => {
+    estado.modo = r.value;
+    sincronizarCampos();
+    atualizar();
+  }));
+  for (const chave of ['C1', 'C2', 'C3']) {
+    $(`manual-${chave}`).addEventListener('change', (e) => { estado.manual[chave] = e.target.value; atualizar(); });
+  }
   $('btnExemplo').addEventListener('click', () => novoPaciente(EXEMPLO));
   $('btnLimpar').addEventListener('click', () => novoPaciente());
   $('arquivos').addEventListener('change', (e) => { carregarArquivos([...e.target.files]); e.target.value = ''; });
@@ -457,10 +436,20 @@ async function iniciar() {
       ler('oms-estatura-2006.json'), ler('oms-estatura-2007.json'), ler('oms-velocidade-2009.json'),
     ]);
     tabelas = { t2006, t2007, oms2009 };
+    // referências de VC incluídas no site (data/referencias.json diz quais existem)
+    const incluidas = await ler('referencias.json');
+    for (const chave of ['kelly', 'tanner']) {
+      if (!incluidas[chave]) continue;
+      const v = validarReferencia(await ler(incluidas[chave]));
+      if (!v.ok) throw new Error(`${incluidas[chave]}: ${v.erros[0]}`);
+      estado[chave] = v.dados;
+      estado.arquivos[chave] = 'Incluída';
+    }
+    renderRefs();
   } catch (e) {
     const el = $('erroGeral');
     el.hidden = false;
-    el.textContent = `Não foi possível carregar as tabelas da OMS (${e.message}). Abra a página por um servidor HTTP `
+    el.textContent = `Não foi possível carregar as tabelas de referência (${e.message}). Abra a página por um servidor HTTP `
       + '(GitHub Pages ou "python3 -m http.server"), não direto do arquivo.';
     return;
   }
