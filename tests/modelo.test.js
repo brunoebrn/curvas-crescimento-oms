@@ -43,25 +43,47 @@ test('exemplo fictício: estatura entre −3 e −2 DP; sem referência C2 fica 
   perto(r.alvo.alvo, 171.5, 1e-9);
 });
 
-test('exemplo fictício: o intervalo mais recente tem 6 meses e há sugestão de par de cerca de 12 meses', () => {
+test('par automático: o que termina na última medida e fica mais perto de 12 meses', () => {
   const r = calcular(estadoBase(), tabelas);
-  assert.equal(r.parUsado.origem, 'recente');
+  assert.equal(r.parUsado.origem, 'automatico');
+  assert.equal(r.parUsado.a, 'm2');
+  assert.equal(r.parUsado.b, 'm4');
+  perto(r.parUsado.intervalo.anos, 1, 0.01);
+});
+
+test('par automático: sem par de cerca de 12 meses, usa o intervalo mais recente', () => {
+  const e = estadoBase();
+  e.medidas = e.medidas.slice(3); // só as duas últimas, 6 meses de distância
+  const r = calcular(e, tabelas);
+  assert.equal(r.parUsado.origem, 'automatico');
   perto(r.parUsado.intervalo.meses, 6, 0.1);
-  assert.ok(r.sugestaoPar);
-  perto(r.sugestaoPar.anos, 1, 0.01);
-  assert.equal(r.sugestaoPar.b, 'm4');
-  assert.equal(r.sugestaoPar.a, 'm2');
+});
+
+test('par automático antes dos 2 anos: intervalo mais recente, não o de 12 meses', () => {
+  const e = { ...estadoBase(), sexo: 'F', nascimento: '' };
+  e.medidas = [
+    { id: 'a', modo: 'idade', anos: 0, meses: 6, cm: 64 },
+    { id: 'b', modo: 'idade', anos: 1, meses: 0, cm: 71 },
+    { id: 'c', modo: 'idade', anos: 1, meses: 6, cm: 77 },
+  ];
+  const r = calcular(e, tabelas);
+  assert.equal(r.parUsado.a, 'b');
+  assert.equal(r.parUsado.avaliacao.chave, 'oms2009');
 });
 
 test('exemplo fictício com referência e par de 12 meses: C2 atende', () => {
-  const e = { ...estadoBase(), kelly, par: { a: 'm2', b: 'm4' } };
+  const e = { ...estadoBase(), kelly };
   const r = calcular(e, tabelas);
-  assert.equal(r.parUsado.origem, 'escolhido');
   perto(r.parUsado.intervalo.vc, 3.6 / (364 / 365.25), 1e-6);
   assert.equal(r.parUsado.avaliacao.chave, 'kelly');
   assert.ok(r.parUsado.avaliacao.z < -0.6745);
   assert.equal(r.criterios.C2.status, 'atende');
-  assert.equal(r.sugestaoPar, null);
+});
+
+test('par escolhido pelo avaliador prevalece sobre o automático', () => {
+  const r = calcular({ ...estadoBase(), kelly, par: { a: 'm3', b: 'm4' } }, tabelas);
+  assert.equal(r.parUsado.origem, 'escolhido');
+  perto(r.parUsado.intervalo.meses, 6, 0.1);
 });
 
 test('classificação manual prevalece', () => {
@@ -84,9 +106,9 @@ test('intervalos trazem variação do z de estatura e guia SBP', () => {
   assert.equal(i.avaliacao.chave, 'tanner');
 });
 
-test('par escolhido inválido volta ao intervalo mais recente', () => {
+test('par escolhido inválido volta ao automático', () => {
   const r = calcular({ ...estadoBase(), par: { a: 'x', b: 'm4' } }, tabelas);
-  assert.equal(r.parUsado.origem, 'recente');
+  assert.equal(r.parUsado.origem, 'automatico');
 });
 
 test('linhas com erro não entram no cálculo, mas são devolvidas', () => {

@@ -6,7 +6,7 @@ import { estaturaAlvo } from './alvo.js';
 import { validarMedidas } from './validacao.js';
 import { calcularVc, avaliarVc } from './vc.js';
 import { avaliarCriterios } from './criterios.js';
-import { idadeDecimal } from './idade.js';
+import { idadeDecimal, DIAS_POR_MES } from './idade.js';
 
 const JANELA_MIN = 0.85;
 const JANELA_MAX = 1.15;
@@ -54,24 +54,26 @@ export function calcular(estado, tabelas) {
   const intervalos = [];
   for (let i = 1; i < medidas.length; i += 1) intervalos.push(montarIntervalo(medidas[i - 1], medidas[i]));
 
-  // par usado no checklist: o escolhido (se válido) ou o intervalo mais recente
+  // Par usado no checklist. Escolhido pelo avaliador, se válido; senão automático: o par que termina na
+  // última medida e fica mais perto de 12 meses (0,85 a 1,15 ano, ponto médio a partir de 2 anos, onde as
+  // referências são de velocidade anual); na falta dele, o intervalo mais recente.
   let parUsado = null;
+  const ultima = medidas.at(-1) ?? null;
   const porId = new Map(medidas.map((m) => [m.id, m]));
   const pa = estado.par ? porId.get(estado.par.a) : null;
   const pb = estado.par ? porId.get(estado.par.b) : null;
-  if (pa && pb && pb.dias > pa.dias) parUsado = { ...montarIntervalo(pa, pb), origem: 'escolhido' };
-  else if (intervalos.length) parUsado = { ...intervalos.at(-1), origem: 'recente' };
-
-  // sugestão: par que termina na última medida e fica mais perto de 12 meses, se o par em uso não estiver na janela
-  let sugestaoPar = null;
-  const ultima = medidas.at(-1) ?? null;
-  const naJanela = (anos) => anos >= JANELA_MIN && anos <= JANELA_MAX;
-  if (ultima && parUsado && !naJanela(parUsado.intervalo.anos)) {
+  if (pa && pb && pb.dias > pa.dias) {
+    parUsado = { ...montarIntervalo(pa, pb), origem: 'escolhido' };
+  } else if (intervalos.length) {
+    let melhor = null;
     for (const m of medidas) {
+      if (m === ultima) continue;
       const anos = idadeDecimal(ultima.dias - m.dias);
-      if (m === ultima || !naJanela(anos)) continue;
-      if (!sugestaoPar || Math.abs(anos - 1) < Math.abs(sugestaoPar.anos - 1)) sugestaoPar = { a: m.id, b: ultima.id, anos };
+      const medioMeses = (ultima.dias + m.dias) / 2 / DIAS_POR_MES;
+      if (anos < JANELA_MIN || anos > JANELA_MAX || medioMeses < 24) continue;
+      if (!melhor || Math.abs(anos - 1) < Math.abs(melhor.anos - 1)) melhor = { m, anos };
     }
+    parUsado = { ...(melhor ? montarIntervalo(melhor.m, ultima) : intervalos.at(-1)), origem: 'automatico' };
   }
 
   const vcParaCriterios = parUsado ? { ...parUsado.avaliacao, anos: parUsado.intervalo.anos } : null;
@@ -82,6 +84,6 @@ export function calcular(estado, tabelas) {
     : null;
 
   return {
-    oms, sexo, linhas, medidas, intervalos, parUsado, sugestaoPar, criterios, alvo, ultima,
+    oms, sexo, linhas, medidas, intervalos, parUsado, criterios, alvo, ultima,
   };
 }
