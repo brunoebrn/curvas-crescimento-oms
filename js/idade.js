@@ -37,7 +37,8 @@ export function diasDeAnosMeses(anos, meses) {
 
 /** Idade em anos e meses completos, por exemplo "2 a 6 m". */
 export function formatarIdade(dias) {
-  const totalMeses = Math.floor(dias / DIAS_POR_MES + 1e-9);
+  // meio dia de folga: idades informadas em anos e meses são arredondadas para dias inteiros
+  const totalMeses = Math.floor((dias + 0.5) / DIAS_POR_MES);
   return `${Math.floor(totalMeses / 12)} a ${totalMeses % 12} m`;
 }
 
