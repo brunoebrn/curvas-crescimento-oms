@@ -3,10 +3,10 @@
 
 Uso:
     python3 scripts/extrair_kelly.py --pdf referencias-restritas/kelly-2014-suplementar.pdf \
-        --saida referencias-restritas/kelly-2014.json
+        --saida data/kelly-2014.json
 
-O PDF e o JSON são material protegido (Endocrine Society): NUNCA versionar. Ficam em
-referencias-restritas/ (ignorada pelo git) e no Drive.
+O PDF fica em referencias-restritas/ (ignorada pelo git) e no Drive; não é versionado. O JSON gerado é
+versionado em data/ por decisão do mantenedor, que declarou ter autorização (ver data/README.md).
 
 Método: o texto do PDF é extraível (sem OCR). Cada número é atribuído à coluna pela posição
 horizontal, porque na Tabela 2b há blocos vazios em algumas idades. Autoverificação: os
@@ -170,7 +170,8 @@ def montar(t2a, t2b):
                        "velocity in US children. J Clin Endocrinol Metab. 2014;99(6):2104-12. "
                        "Supplemental Tables 2a e 2b.",
             "doi": "10.1210/jc.2013-4455",
-            "direitos": "Copyright Endocrine Society. Uso restrito; não redistribuir.",
+            "direitos": "Copyright Endocrine Society. Reproduzido neste repositório com autorização "
+                        "declarada pelo mantenedor em 16/11/2026 (ver data/README.md).",
         },
         "geradoEm": datetime.date.today().isoformat(),
         "metodo": "Texto extraído do PDF suplementar com pdfplumber (scripts/extrair_kelly.py); colunas "
